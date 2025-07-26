@@ -80,7 +80,7 @@ Conflict: Port 6379 is already in use by another container
 Use this one-liner to list all unique host ports exposed by **all running Docker containers**:
 
 ```bash
-docker ps --format '{{{{.Ports}}}}' | grep -oP '\\d+(?=->)' | sort -n | uniq
+docker ps --format '{{.Ports}}' | grep -oP '\d+(?=->)' | sort -n | uniq
 ```
 
 Simple. Fast. No surprises.
