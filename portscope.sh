@@ -78,17 +78,15 @@ free_port() {
 check_requirements() {
     local missing=0
 
-    # List of required commands
-    for cmd in docker ss awk grep sed realpath; do
-        if ! command -v "$cmd" > /dev/null; then
-            echo "Error: Required command not found: $cmd"
+    for cmd in "$@"; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            echo "Error: Required command not found: $cmd" >&2
             missing=1
         fi
     done
 
-    # Exit if any required command is missing
     if [[ $missing -eq 1 ]]; then
-        echo "Please install the missing dependencies and try again."
+        echo "Please install the missing dependencies and try again." >&2
         exit 1
     fi
 }
@@ -184,13 +182,24 @@ check_ports() {
     fi
 }
 
-# Check if required commands are installed
-check_requirements
-
-if [[ "$1" == "--free-port" ]]; then
-    free_port "$2"
-    exit 0
-fi
-
-# Check ports for the provided target
-check_ports "$1"
+# Determine operation based on first argument
+case "$1" in
+    --help)
+        show_help
+        exit 0
+        ;;
+    --version)
+        show_version
+        exit 0
+        ;;
+    --free-port)
+        shift
+        check_requirements docker ss awk grep ps kill
+        free_port "$1"
+        exit $?
+        ;;
+    *)
+        check_requirements docker ss awk grep sed realpath
+        check_ports "$1"
+        ;;
+esac
