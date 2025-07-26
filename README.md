@@ -93,7 +93,7 @@ Simple. Fast. No surprises.
 
 - Bash
 - `ss` (part of `iproute2` package)
-- Docker CLI
+- Docker CLI (optional for `--free-port`)
 
 ---
 

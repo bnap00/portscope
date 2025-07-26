@@ -31,9 +31,11 @@ free_port() {
         return 1
     fi
 
-    # Check if the port is used by a Docker container
-    local container_info
-    container_info=$(docker ps --filter "publish=${port}" --format '{{.ID}} {{.Names}} {{.Label "com.docker.compose.project"}}')
+    # Check if the port is used by a Docker container (if Docker is installed)
+    local container_info=""
+    if command -v docker >/dev/null 2>&1; then
+        container_info=$(docker ps --filter "publish=${port}" --format '{{.ID}} {{.Names}} {{.Label "com.docker.compose.project"}}')
+    fi
 
     if [[ -n "$container_info" ]]; then
         read -r cid cname cproj <<< "$container_info"
@@ -147,6 +149,7 @@ check_ports() {
 
     # Get currently used ports and their associated projects
     local used_ports_info
+    # shellcheck disable=SC2016
     used_ports_info=$(docker ps -q | xargs docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }} {{range $k, $v := .NetworkSettings.Ports}}{{if $v}}{{(index $v 0).HostPort}} {{end}}{{end}}')
 
     # Get the absolute path of the current directory
@@ -194,7 +197,7 @@ case "$1" in
         ;;
     --free-port)
         shift
-        check_requirements docker ss awk grep ps kill
+        check_requirements ss awk grep ps kill
         free_port "$1"
         exit $?
         ;;
