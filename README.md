@@ -25,6 +25,7 @@ It tells you *before* your container says "Port already in use".
 - 🧪 Validates YAML file type.
 - 🔎 Extracts **host ports** like `8080:80`.
 - ⚠️ Detects conflicts with system ports (used by other services or Docker).
+- 🚫 Ignores ports already used by containers from the **same compose file**.
 - ✅ Friendly output: “All good” or conflict details.
 
 ---
@@ -37,7 +38,11 @@ chmod +x portscope
 sudo mv portscope /usr/local/bin/portscope
 ```
 
-Then run `portscope` from anywhere.
+To update later:
+
+```bash
+sudo curl -o /usr/local/bin/portscope https://raw.githubusercontent.com/bnap00/portscope/main/portscope.sh
+```
 
 ---
 
@@ -49,6 +54,13 @@ portscope /path/to/dir      # Use compose file inside specified directory
 portscope custom.yml        # Parse a specific file directly
 ```
 
+### ℹ️ Extras
+
+```bash
+portscope --help            # Show help message
+portscope --version         # Show version number
+```
+
 ---
 
 ## 📂 Example
@@ -57,8 +69,8 @@ portscope custom.yml        # Parse a specific file directly
 $ portscope ./project
 Using docker-compose file: ./project/docker-compose.yml
 Required host ports: 80 6379
-Conflict: Port 80 is already in use
-All good: No port conflicts detected.
+Info: Port 80 is already used by the same project – skipping
+Conflict: Port 6379 is already in use by another container
 ```
 
 ---
@@ -79,6 +91,7 @@ Simple. Fast. No surprises.
 
 - Bash
 - `ss` (part of `iproute2` package)
+- Docker CLI
 
 ---
 
