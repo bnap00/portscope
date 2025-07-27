@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the version of the script
-VERSION="1.2.1"
+VERSION="1.2.2"
 
 # Whether to auto-confirm prompts
 AUTO_YES=0
@@ -60,6 +60,10 @@ free_port() {
         echo "Error: Please provide a valid port number." >&2
         return 1
     fi
+    if (( port < 1 || port > 65535 )); then
+        echo "Error: Port number must be between 1 and 65535." >&2
+        return 1
+    fi
 
     # Check if the port is used by a Docker container (if Docker is installed)
     local container_info=""
@@ -68,36 +72,40 @@ free_port() {
     fi
 
     if [[ -n "$container_info" ]]; then
-        read -r cid cname cproj <<< "$container_info"
-        echo "Port $port is used by Docker container '$cname' (project: ${cproj:-n/a})"
-        if prompt_confirm "Stop this container to free the port?"; then
-            if docker stop "$cid" >/dev/null; then
-                echo "Container '$cname' stopped."
+        while read -r cid cname cproj; do
+            [[ -z $cid ]] && continue
+            echo "Port $port is used by Docker container '$cname' (project: ${cproj:-n/a})"
+            if prompt_confirm "Stop this container to free the port?"; then
+                if docker stop "$cid" >/dev/null; then
+                    echo "Container '$cname' stopped."
+                else
+                    echo "Failed to stop container '$cname'." >&2
+                fi
             else
-                echo "Failed to stop container '$cname'." >&2
+                echo "Port $port left in use by Docker container '$cname'."
             fi
-        else
-            echo "Port $port left in use by Docker container."
-        fi
+        done <<< "$container_info"
         return 0
     fi
 
     # Check if the port is used by a regular process
-    local pid
-    pid=$(ss -ltnp 2>/dev/null | awk -v p=":$port" '$4 ~ p {print $6}' | grep -oE '[0-9]+' | head -n1)
-    if [[ -n "$pid" ]]; then
-        local cmd
-        cmd=$(ps -p "$pid" -o cmd --no-headers 2>/dev/null)
-        echo "Port $port is used by process $pid ($cmd)"
-        if prompt_confirm "Kill this process to free the port?"; then
-            if kill "$pid" >/dev/null 2>&1; then
-                echo "Process $pid terminated."
+    local pids
+    pids=$(ss -ltnp 2>/dev/null | awk -v p=":$port" '$4 ~ p {print $6}' | grep -oE '[0-9]+' | sort -u)
+    if [[ -n "$pids" ]]; then
+        for pid in $pids; do
+            local cmd
+            cmd=$(ps -p "$pid" -o cmd --no-headers 2>/dev/null)
+            echo "Port $port is used by process $pid ($cmd)"
+            if prompt_confirm "Kill this process to free the port?"; then
+                if kill "$pid" >/dev/null 2>&1; then
+                    echo "Process $pid terminated."
+                else
+                    echo "Failed to kill process $pid." >&2
+                fi
             else
-                echo "Failed to kill process $pid." >&2
+                echo "Port $port left in use by process $pid."
             fi
-        else
-            echo "Port $port left in use by process $pid."
-        fi
+        done
         return 0
     fi
 
