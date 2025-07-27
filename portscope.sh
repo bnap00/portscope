@@ -32,7 +32,8 @@ Check if ports defined in a docker-compose.yml file are already in use.
 Options:
   --help        Show this help message
   --version     Show version information
-  --free-port N Attempt to free port N if it is in use
+  --free-port N
+  --free N      Attempt to free port N if it is in use
   --yes         Assume "yes" for all prompts
 EOF
 }
@@ -232,7 +233,7 @@ case "$1" in
         show_version
         exit 0
         ;;
-    --free-port)
+    --free-port|--free)
         shift
         check_requirements ss awk grep ps kill
         free_port "$1"
