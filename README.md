@@ -60,6 +60,7 @@ portscope custom.yml        # Parse a specific file directly
 
 ```bash
 portscope --free-port 8080  # Try to free port 8080
+portscope --free 8080       # Same as above using alias
 portscope --free-port 8080 --yes  # Free port 8080 without prompts
 portscope --help            # Show help message
 portscope --version         # Show version number
@@ -95,7 +96,7 @@ Simple. Fast. No surprises.
 
 - Bash
 - `ss` (part of `iproute2` package)
-- Docker CLI (optional for `--free-port`)
+- Docker CLI (optional for `--free-port` or `--free`)
 
 ---
 
