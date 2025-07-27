@@ -1,7 +1,26 @@
 #!/bin/bash
 
 # Define the version of the script
-VERSION="1.2.0"
+VERSION="1.2.1"
+
+# Whether to auto-confirm prompts
+AUTO_YES=0
+if [[ ${PORTSCOPE_YES:-0} == 1 || ${CI:-} == true ]]; then
+    AUTO_YES=1
+fi
+
+# Check arguments for --yes flag
+for arg in "$@"; do
+    if [[ $arg == "--yes" ]]; then
+        AUTO_YES=1
+        break
+    fi
+done
+
+# Remove leading --yes if present
+if [[ $1 == "--yes" ]]; then
+    shift
+fi
 
 # Function to display help message
 show_help() {
@@ -14,12 +33,23 @@ Options:
   --help        Show this help message
   --version     Show version information
   --free-port N Attempt to free port N if it is in use
+  --yes         Assume "yes" for all prompts
 EOF
 }
 
 # Function to display version information
 show_version() {
     echo "portscope version $VERSION"
+}
+
+# Prompt for confirmation unless AUTO_YES is set
+prompt_confirm() {
+    local msg="$1"
+    if [[ $AUTO_YES -eq 1 ]]; then
+        return 0
+    fi
+    read -rp "$msg [y/N] " ans
+    [[ $ans =~ ^[Yy]$ ]]
 }
 
 # Function to attempt freeing a port
@@ -40,8 +70,7 @@ free_port() {
     if [[ -n "$container_info" ]]; then
         read -r cid cname cproj <<< "$container_info"
         echo "Port $port is used by Docker container '$cname' (project: ${cproj:-n/a})"
-        read -rp "Stop this container to free the port? [y/N] " ans
-        if [[ $ans =~ ^[Yy]$ ]]; then
+        if prompt_confirm "Stop this container to free the port?"; then
             if docker stop "$cid" >/dev/null; then
                 echo "Container '$cname' stopped."
             else
@@ -60,8 +89,7 @@ free_port() {
         local cmd
         cmd=$(ps -p "$pid" -o cmd --no-headers 2>/dev/null)
         echo "Port $port is used by process $pid ($cmd)"
-        read -rp "Kill this process to free the port? [y/N] " ans
-        if [[ $ans =~ ^[Yy]$ ]]; then
+        if prompt_confirm "Kill this process to free the port?"; then
             if kill "$pid" >/dev/null 2>&1; then
                 echo "Process $pid terminated."
             else
@@ -184,6 +212,7 @@ check_ports() {
         echo "All good: No external port conflicts detected."
     fi
 }
+
 
 # Determine operation based on first argument
 case "$1" in

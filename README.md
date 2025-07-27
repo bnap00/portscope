@@ -27,7 +27,7 @@ It tells you *before* your container says "Port already in use".
 - ⚠️ Detects conflicts with system ports (used by other services or Docker).
 - 🚫 Ignores ports already used by containers from the **same compose file**.
 - ✅ Friendly output: “All good” or conflict details.
-- 🛑 Optionally free a port that's currently in use.
+- 🛑 Optionally free a specified port that's currently in use.
 
 ---
 
@@ -58,9 +58,9 @@ portscope custom.yml        # Parse a specific file directly
 ### ℹ️ Extras
 
 ```bash
+portscope --free-port 8080  # Try to free port 8080
 portscope --help            # Show help message
 portscope --version         # Show version number
-portscope --free-port 8080  # Try to free port 8080
 ```
 
 ---
